@@ -24,20 +24,19 @@ def run(database='dm'):
         global db_hold
         db_hold = '%s'
     with get_connetcion(database) as connection:
-        indicators_date_map = get_indicators_id_date_map(connection)
         file_to_update_map = filter_update_files(get_folder_paths())
         # 遍历配置表，对每个文件目录进行操作
         for config in file_construct.values():
-            read_and_insert_data(config['read_insert_function'], indicators_date_map, config,
+            read_and_insert_data(config['read_insert_function'], connection, config,
                                  file_to_update_map[config['folder_path']], connection)
 
 
-def read_and_insert_data(insert_function, indicators_date_map, data_construct, file_list, conn):
+def read_and_insert_data(insert_function, connection, data_construct, file_list, conn):
     """
     解析一个文件目录下所有数据文件
 
     :param insert_function:     数据解析插入方法
-    :param indicators_date_map: 数据库已有指标-最新更新时间 map
+    :param connection:          数据库连接
     :param data_construct:      local_file_map.file_construct 中的一个类别，包含同目录下文件的解析规则
     :param file_list:           目录下的文件列表
     :param conn:                数据库连接对象
@@ -51,6 +50,7 @@ def read_and_insert_data(insert_function, indicators_date_map, data_construct, f
         data_col_size = indicator_name_row.size
         # 遍历所有数据列，按列执行插入数据库的操作
         for i in range(data_construct['col']['data_start_col'], data_col_size):
+            indicators_date_map = get_indicators_id_date_map(connection)
             insert_function(indicators_date_map, data_construct,
                             df.iloc[:, [data_construct['col']['date_col'], i]],
                             data_construct['filter_function'](file), conn, exist_indicator, db_hold)
