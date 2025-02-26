@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from reader.category_map import category_map
-from utils.data_structure import generate_uuid, is_stop_indicator
+from utils.data_structure import generate_uuid, is_stop_indicator, frequency_map
 
 
 # 同花顺excel抽取方法
@@ -20,7 +20,7 @@ def insert_data_ths(indicators_date_map, data_construct, df, file_name, conn, ex
     """
     df = df.dropna(subset=[df.columns[1]])
     indicator_name = df.iloc[data_construct['row']['indicator_name'], 1]
-    indicator_frequency = df.iloc[data_construct['row']['indicator_frequency'], 1]
+    indicator_frequency = frequency_map[df.iloc[data_construct['row']['indicator_frequency'], 1]]
     indicator_id = df.iloc[data_construct['row']['indicator_id'], 1]
     indicator_unit = df.iloc[data_construct['row']['indicator_unit'], 1]
     indicator_resource = df.iloc[data_construct['row']['indicator_resource'], 1]
@@ -56,7 +56,7 @@ def insert_data_ths(indicators_date_map, data_construct, df, file_name, conn, ex
             break
         many_data.append((generate_uuid(), current_date, str(indicator_value), indicator_id, indicator_unit,
                           indicator_frequency, indicator_resource, indicator_name, file_name, current_time,
-                          current_time))
+                          current_time, "同花顺"))
         new_date = max(new_date, current_date)
     if not many_data:
         return
@@ -75,10 +75,11 @@ def insert_data_ths(indicators_date_map, data_construct, df, file_name, conn, ex
                                 REC_CREATOR, 
                                 REC_CREATE_TIME, 
                                 REC_REVISOR, 
-                                REC_REVISOR_TIME
+                                REC_REVISOR_TIME,
+                                DATA_SOURCE
                             ) 
                             VALUES (
-                                {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, 'System', {db_hold}, 'System', {db_hold}
+                                {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, 'System', {db_hold}, 'System', {db_hold}, {db_hold}
                             );
                         """
         cursor.executemany(insert_sql, many_data)
@@ -99,7 +100,7 @@ def insert_data_mysteel(indicators_date_map, data_construct, df, file_name, conn
     :return:
     """
     indicator_name = df.iloc[data_construct['row']['indicator_name'], 1]
-    indicator_frequency = df.iloc[data_construct['row']['indicator_frequency'], 1]
+    indicator_frequency = frequency_map[df.iloc[data_construct['row']['indicator_frequency'], 1]]
     indicator_id = df.iloc[data_construct['row']['indicator_id'], 1]
     indicator_unit = df.iloc[data_construct['row']['indicator_unit'], 1]
     indicator_resource = df.iloc[data_construct['row']['indicator_resource'], 1]
@@ -131,7 +132,7 @@ def insert_data_mysteel(indicators_date_map, data_construct, df, file_name, conn
             break
         many_data.append((generate_uuid(), current_date, indicator_id, indicator_unit, indicator_name,
                           indicator_frequency, indicator_resource, str(current_value), file_name, current_time,
-                          current_time))
+                          current_time, 'MySteel'))
     with conn.cursor() as cursor:
         insert_sql = f"""insert into {sql_table} (
                             UUID,
@@ -146,7 +147,8 @@ def insert_data_mysteel(indicators_date_map, data_construct, df, file_name, conn
                             REC_CREATOR, 
                             REC_CREATE_TIME,
                             REC_REVISOR,
-                            REC_REVISOR_TIME) values ({db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, 'System', {db_hold}, 'System', {db_hold})"""
+                            REC_REVISOR_TIME,
+                            DATA_SOURCE) values ({db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, {db_hold}, 'System', {db_hold}, 'System', {db_hold}, {db_hold})"""
         try:
             cursor.executemany(insert_sql, many_data)
         except Exception as e:

@@ -1,5 +1,12 @@
 import uuid
 
+frequency_map = {
+    '日': 'D',
+    '周': 'W',
+    '月': 'M',
+    '季': 'S',
+    '年': 'Y'
+}
 
 def is_stop_indicator(indicator_name):
     flag = False
